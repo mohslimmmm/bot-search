@@ -1,0 +1,8 @@
+# Environment variables (keep private)
+.env
+
+# Dependencies
+node_modules/
+
+# Output files
+# Output/*.csv
