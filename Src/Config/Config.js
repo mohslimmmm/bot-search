@@ -20,6 +20,7 @@ const str = (key, fallback) =>
 const testMode    = bool('TEST_MODE',    false);
 const openBrowser = bool('OPEN_BROWSER', true);
 const fullCount   = int('RESULT_COUNT',  30);
+const onlyWithoutWebsite = bool('ONLY_WITHOUT_WEBSITE', false);
 
 // ── Config object ─────────────────────────────────────────────────────────────
 const Config = {
@@ -34,6 +35,7 @@ const Config = {
   // Flags
   testMode,
   openBrowser,
+  onlyWithoutWebsite,
 
   // Output
   outputDir:  'Output',

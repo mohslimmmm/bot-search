@@ -198,7 +198,8 @@ export async function scrapeMaps(page) {
   await randomSleep(Config.delays.afterSearch);
 
   // ── Scroll until we have enough cards ─────────────────────────────────────
-  await scrollUntilLoaded(page, targetCount);
+  const fetchCount = Config.onlyWithoutWebsite ? targetCount * 5 : targetCount;
+  await scrollUntilLoaded(page, fetchCount);
 
   // ── Collect ALL card URLs in one shot BEFORE clicking anything ───────────
   // Google Maps lazily removes off-screen card DOM nodes as you scroll.
@@ -210,22 +211,29 @@ export async function scrapeMaps(page) {
     (anchors) => [...new Set(anchors.map((a) => a.href))]  // dedupe URLs too
   );
 
-  const toVisit = cardUrls.slice(0, targetCount);
-  console.log(`🗂️  Collected ${toVisit.length} unique card URLs — starting extraction…\n`);
+  console.log(`🗂️  Collected ${cardUrls.length} unique card URLs — starting extraction…\n`);
 
   // ── Navigate to each card URL directly ───────────────────────────────────
   const leads = [];
 
-  for (let i = 0; i < toVisit.length; i++) {
-    const url = toVisit[i];
-    console.log(`📍  [${i + 1}/${toVisit.length}] Navigating to card…`);
+  for (let i = 0; i < cardUrls.length; i++) {
+    if (leads.length >= targetCount) break;
+
+    const url = cardUrls[i];
+    console.log(`📍  [${i + 1}/${cardUrls.length}] Navigating to card…`);
 
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
       const lead = await extractFromPanel(page);
+
+      if (Config.onlyWithoutWebsite && lead.Website && lead.Website.trim() !== '') {
+        console.log(`   ⏭️  Skipping ${lead.Businessname || '(no name)'} (has website)`);
+        continue;
+      }
+
       leads.push(lead);
 
-      console.log(`   ✔ ${lead.Businessname || '(no name)'} | ☎ ${lead.Phonenumber || '—'} | ⭐ ${lead.Googlemapsscore || '—'}`);
+      console.log(`   ✔ ${lead.Businessname || '(no name)'} | ☎ ${lead.Phonenumber || '—'} | ⭐ ${lead.Googlemapsscore || '—'} | 🎯 Leads: ${leads.length}/${targetCount}`);
     } catch (err) {
       console.warn(`   ⚠️  Skipping card ${i + 1}: ${err.message}`);
     }
